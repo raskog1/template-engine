@@ -4,12 +4,52 @@ const Intern = require("./lib/Intern");
 const inquirer = require("inquirer");
 const path = require("path");
 const fs = require("fs");
+const joi = require("joi");
 
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
 
+function init() {
+
+    inquirer.prompt([
+        {
+            input: "input",
+            message: "What is the team manager's name?",
+            name: "name"
+        },
+        {
+            input: "number",
+            message: "What is this employees ID number?",
+            name: "id"
+        },
+        {
+            type: "input",
+            message: "What is the team manager's email?",
+            name: "email",
+            validate: function validateEmail(name) {
+                let valid;
+                joi.validate(name, joi.string().email(), function (err, val) {
+                    if (err) {
+                        valid = console.log("Please enter a valid email address.");
+                    } else {
+                        valid = true;
+                    }
+                })
+                return valid;
+            }
+        },
+        {
+            type: "number",
+            message: "What is the team manager's office phone number?",
+            name: "officeNumber",
+            validate: function validateInput(name) {
+                return name !== ""; //needs to detect if entry is a number
+            }
+        }
+    ])
+}
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
