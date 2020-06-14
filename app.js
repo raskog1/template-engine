@@ -11,45 +11,132 @@ const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
 
-function init() {
+const employees = [];
 
-    inquirer.prompt([
+function init() {
+  inquirer.prompt(questions).then((response) => {
+    if (response.role === "Manager") {
+      const manager = new Manager(
+        response.name,
+        response.id,
+        response.email,
+        response.officeNumber
+      );
+      employees.push(manager);
+    } else if (response.role === "Engineer") {
+      const engineer = new Engineer(
+        response.name,
+        response.id,
+        response.email,
+        response.github
+      );
+      employees.push(engineer);
+    } else if (response.role === "Intern") {
+      const intern = new Intern(
+        response.name,
+        response.id,
+        response.email,
+        response.school
+      );
+      employees.push(intern);
+    }
+
+    console.log(employees);
+
+    inquirer
+      .prompt([
         {
-            input: "input",
-            message: "What is the team manager's name?",
-            name: "name"
+          type: "confirm",
+          message: "Would you like to add another employee?",
+          name: "add",
         },
-        {
-            input: "number",
-            message: "What is this employees ID number?",
-            name: "id"
-        },
-        {
-            type: "input",
-            message: "What is the team manager's email?",
-            name: "email",
-            validate: function validateEmail(name) {
-                let valid;
-                joi.validate(name, joi.string().email(), function (err, val) {
-                    if (err) {
-                        valid = console.log("Please enter a valid email address.");
-                    } else {
-                        valid = true;
-                    }
-                })
-                return valid;
-            }
-        },
-        {
-            type: "number",
-            message: "What is the team manager's office phone number?",
-            name: "officeNumber",
-            validate: function validateInput(name) {
-                return name !== ""; //needs to detect if entry is a number
-            }
+      ])
+      .then((response) => {
+        if (response.add) {
+          init();
+        } else {
+          fs.writeFileSync(outputPath, render(employees));
         }
-    ])
+      });
+  });
 }
+
+const questions = [
+  {
+    type: "input",
+    message: "Enter name",
+    name: "name",
+    validate: function validateName(name) {
+      return name !== "";
+    },
+  },
+  {
+    input: "number",
+    message: "Enter ID number",
+    name: "id",
+    validate: function validateID(name) {
+      return name !== "";
+    },
+  },
+  {
+    type: "input",
+    message: "Enter email address",
+    name: "email",
+    validate: function validateEmail(name) {
+      let valid;
+      joi.validate(name, joi.string().email(), function (err, val) {
+        if (err) {
+          console.clear();
+          valid = console.log("Please enter a valid email address.");
+        } else {
+          valid = true;
+        }
+      });
+      return valid;
+    },
+  },
+  {
+    type: "list",
+    message: "Select an employee position",
+    name: "role",
+    choices: ["Intern", "Engineer", "Manager"],
+  },
+  {
+    type: "number",
+    message: "Please enter a phone number",
+    name: "officeNumber",
+    when: function (response) {
+      return response.role === "Manager";
+    },
+    validate: function validateOfficeNumber(name) {
+      return name !== "";
+    },
+  },
+  {
+    type: "input",
+    message: "Enter school of record",
+    name: "school",
+    when: function (answers) {
+      return answers.role === "Intern";
+    },
+    validate: function validateSchool(name) {
+      return name !== "";
+    },
+  },
+  {
+    type: "input",
+    message: "Enter Github profile name",
+    name: "github",
+    when: function (answers) {
+      return answers.role === "Engineer";
+    },
+    validate: function validateGithub(name) {
+      return name !== "";
+    },
+  },
+];
+
+init();
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
